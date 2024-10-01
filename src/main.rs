@@ -11,6 +11,8 @@ use esp_idf_svc::timer::EspTaskTimerService;
 use esp_idf_svc::wifi::{self, AsyncWifi, EspWifi};
 use esp_idf_svc::{eventloop::EspSystemEventLoop, nvs::EspDefaultNvsPartition};
 
+use esp_idf_svc::sntp;
+
 const SSID: &str = env!("WIFI_SSID");
 const PASSWORD: &str = env!("WIFI_PWD");
 
@@ -35,6 +37,11 @@ fn main()  -> anyhow::Result<()>{
     let ip_info = wifi.wifi().sta_netif().get_ip_info().unwrap();
 
     log::info!("WiFi DHCP info: {:?}", ip_info);
+    
+    let _sntp = sntp::EspSntp::new_default()?;
+    log::info!("SNTP initialized");
+
+    log::info!("Current time: {:?}", std::time::SystemTime::now());
 
     log::info!("Shutting down in 5...");
     std::thread::sleep(core::time::Duration::from_secs(5));
