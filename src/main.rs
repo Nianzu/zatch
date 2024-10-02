@@ -4,7 +4,7 @@ use std::fmt::DebugList;
 
 use embedded_svc::wifi::{AuthMethod, ClientConfiguration, Configuration};
 
-use esp_idf_svc::hal::{spi};
+// use esp_idf_svc::hal::{spi};
 use esp_idf_svc::hal::prelude::Peripherals;
 use esp_idf_svc::hal::task::block_on;
 use esp_idf_svc::log::EspLogger;
@@ -15,6 +15,28 @@ use esp_idf_svc::{eventloop::EspSystemEventLoop,  nvs::EspDefaultNvsPartition};
 use esp_idf_svc::sntp;
 
 use esp_idf_hal::gpio::{self, OutputPin, PinDriver};
+use esp_idf_hal::spi::{
+  self,
+  config::{Config, Mode, Phase, Polarity},
+  SpiDeviceDriver,
+};
+use esp_idf_hal::cpu::Core;
+use esp_idf_hal::delay::Delay;
+use gc9a01::{prelude::*, Gc9a01, SPIDisplayInterface};
+use esp_idf_hal::prelude::*;
+use std::sync;
+use std::time::Instant;
+
+use esp_idf_svc::hal::spi::Operation::DelayNs;
+use std::time::Duration;
+
+// use lvgl::input_device::{
+//   pointer::{Pointer, PointerInputData},
+//   InputDriver,
+// };
+// use lvgl::style::Style;
+// use lvgl::widgets::Arc;
+// use lvgl::{Align, Color, Display, DrawBuffer, Part, Widget};
 
 const SSID: &str = env!("WIFI_SSID");
 const PASSWORD: &str = env!("WIFI_PWD");
@@ -31,8 +53,8 @@ fn main()  -> anyhow::Result<()>{
     let pins = peripherals.pins;
 
     let sck = pins.gpio8;
-    let mosi = pins.gpio9;
-    let lcd_cs = pins.gpio4;
+    let mosi = pins.gpio10;
+    let lcd_cs = pins.gpio3;
     let dc = pins.gpio5;
     // let reset = None;
     let backlight = pins.gpio21;
@@ -46,21 +68,69 @@ fn main()  -> anyhow::Result<()>{
     )?;
 
     log::info!("Driver configured!");
+    std::thread::sleep(core::time::Duration::from_secs(1));
 
 
     let mut backlight_output = PinDriver::output(backlight.downgrade_output())?;
+    let dc_output = PinDriver::output(dc.downgrade_output())?;
 
-    loop
-    {
+    let config: Config = Config::new().baudrate(40.MHz().into()).data_mode(Mode {
+      polarity: Polarity::IdleLow,
+      phase: Phase::CaptureOnFirstTransition,
+  });
+  let spi_device = SpiDeviceDriver::new(driver, Some(lcd_cs), &config)?;
+  let interface = SPIDisplayInterface::new(spi_device, dc_output);
+  
+  
 
-      log::info!("Low");
-      backlight_output.set_low()?;
-      std::thread::sleep(core::time::Duration::from_secs(1));
-      log::info!("High");
-      backlight_output.set_high()?;
-      std::thread::sleep(core::time::Duration::from_secs(1));
+  let mut display_driver = Box::new(Gc9a01::new(
+    interface,
+    DisplayResolution240x240,
+    DisplayRotation::Rotate180,
+  ));
+  // .into_buffered_graphics();
+  
 
-    }
+  log::info!("init: {:?}",display_driver.init_with_addr_mode(&mut Delay::new_default()));
+  log::info!("clear: {:?}",display_driver.clear());
+  // log::info!("brightness: {:?}",display_driver.set_brightness(brightness));
+  log::info!("dim: {:?}", display_driver.dimensions());
+
+  backlight_output.set_low()?;
+  std::thread::sleep(core::time::Duration::from_secs(1));
+  backlight_output.set_high()?;
+  std::thread::sleep(core::time::Duration::from_secs(1));
+
+  log::info!("dim: {:?}", display_driver.draw_buffer(&vec![0; 20000]));
+  std::thread::sleep(core::time::Duration::from_secs(5));
+
+  // display_driver.set_write_mode().unwrap();
+  // loop
+  // {
+  //   log::info!("Low");
+  //   display_driver.set_pixel(100, 100, 0).unwrap();
+  //   std::thread::sleep(core::time::Duration::from_secs(1));
+  //   log::info!("High");
+  //   display_driver.set_pixel(100, 100, 65000).unwrap();
+  //   std::thread::sleep(core::time::Duration::from_secs(1));
+  // }
+  // display_driver.init(&mut Delay::new_default()).ok();
+  // display_driver.clear();
+  // display_driver.fill(16);
+
+  // display_driver.flush().ok();
+
+
+    // Backlight
+    // loop
+    // {
+    //   log::info!("Low");
+    //   backlight_output.set_low()?;
+    //   std::thread::sleep(core::time::Duration::from_secs(1));
+    //   log::info!("High");
+    //   backlight_output.set_high()?;
+    //   std::thread::sleep(core::time::Duration::from_secs(1));
+    // }
     
     // WIFI
     log::info!("SSID: {} PWD: {}",SSID, PASSWORD);

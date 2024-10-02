@@ -34,6 +34,17 @@ embedded-svc = { version = "0.28", default-features = false }
 anyhow = "1.0"
 gc9a01-rs = "0.4.1"
 esp-idf-hal = { version = "0.44.1" }
+embedded-graphics = "0.8.1"
+# cstr_core = "0.2.1"
+# lvgl = { version = "0.6.2", default-features = false, features = ["embedded_graphics", "unsafe_no_autoinit"] }
+# lvgl-sys = { version = "0.6.2" }
+
+# esp-idf-hal = { git="https://github.com/esp-rs/esp-idf-hal"}
+# esp-idf-svc = { git="https://github.com/esp-rs/esp-idf-svc"}
+
+# [patch.crates-io]
+# esp-idf-hal = { git="https://github.com/esp-rs/esp-idf-hal"}
+# esp-idf-svc = { git="https://github.com/esp-rs/esp-idf-svc"}
 
 [build-dependencies]
 embuild = "0.32.0"
