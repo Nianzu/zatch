@@ -25,6 +25,8 @@ fn main()  -> anyhow::Result<()>{
     let sys_loop = EspSystemEventLoop::take().unwrap();
     let timer_service = EspTaskTimerService::new().unwrap();
     let nvs = EspDefaultNvsPartition::take().unwrap();
+    
+    log::info!("SSID: {} PWD: {}",SSID, PASSWORD);
 
     let mut wifi = AsyncWifi::wrap(
       EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs)).unwrap(),
