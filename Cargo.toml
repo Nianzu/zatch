@@ -32,6 +32,8 @@ log = { version = "0.4", default-features = false }
 esp-idf-svc = { version = "0.49", default-features = false }
 embedded-svc = { version = "0.28", default-features = false }
 anyhow = "1.0"
+gc9a01-rs = "0.4.1"
+esp-idf-hal = { version = "0.44.1" }
 
 [build-dependencies]
 embuild = "0.32.0"
